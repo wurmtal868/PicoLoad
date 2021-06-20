@@ -31,47 +31,55 @@ if not (os.path.isfile(fwFile)):
 
 print ("Uploading:"+ fwFile)
 
-#Get alist of serial ports of a Pico-Pi
-ports=Path("/dev").glob("ttyA*")
-liste=[]
-for port in ports:
-    print(port)
-    liste.append("%s" %port)
-
-if liste ==[]:
-    print("no serial port found!")
-
-#If list is not empty try to reset each port using 1200 baud
-else:
-    for serialPort in liste:
-            
-        print ("Trying to reset RPI_RP2 on %s" %(serialPort))
-        
-        try:
-            ser = serial.Serial(serialPort,1200,parity=serial.PARITY_NONE, rtscts=1)
-            ser.setDTR(False)
-            if (ser.isOpen()):
-                print("Sucess")    
-                ser.close() # always close port
-                wait=10
-#Check if INFO_UF2.TXT" appears for 10 seconds maximum
-                while (wait>0):
-                    if (os.path.isfile("%s/INFO_UF2.TXT" % (flashpath))):
-                        break
-                    time.sleep(1)
-                    wait = wait-1
-                    print("waiting..")
-
-            else:
-                print("Can't open ",serialPort)
-        except:
-            pass
-#Try to copy the the UF2 FW to the flashpath 
-#even if the Pico is in BOOTSEL mode and no serial port was found
+#Check if the Pico is already in Bootsel mode and copy UF2 file
 if (os.path.isfile("%s/INFO_UF2.TXT" % (flashpath))):
-    command = ("cp %s %s" % (fwFile,flashpath))
+    command = ("cp %s %s" % (fwFile, flashpath))
     print(command)
     os.system(command)
+
 else:
-    print("could not find RPI_RP2 on %s" %(flashpath))
-    exit(2)
+
+    #Get a list of potentials Pico-Pies serial ports
+    ports=Path("/dev").glob("ttyA*")
+    liste=[]
+    for port in ports:
+        print(port)
+        liste.append("%s" %port)
+
+    if liste ==[]:
+        print("no serial port found!")
+
+    #If list is not empty try to reset each port using 1200 baud
+    else:
+        for serialPort in liste:
+                
+            print ("Trying to reset RPI_RP2 on %s" %(serialPort))
+            
+            try:
+                ser = serial.Serial(serialPort,1200,parity=serial.PARITY_NONE, rtscts=1)
+                ser.setDTR(False)
+                if (ser.isOpen()):
+                    print("Sucess")    
+                    ser.close() # always close port
+
+                else:
+                    print("Can't open ",serialPort)
+            except:
+                pass
+    #Check if INFO_UF2.TXT" appears for 10 seconds maximum
+        wait = 10
+        while (wait > 0):
+            if (os.path.isfile("%s/INFO_UF2.TXT" % (flashpath))):
+                break
+            time.sleep(1)
+            wait = wait-1
+            print("waiting..")
+    #Try to copy the the UF2 FW to the flashpath
+    #even if the Pico is in BOOTSEL mode and no serial port was found
+    if (os.path.isfile("%s/INFO_UF2.TXT" % (flashpath))):
+        command = ("cp %s %s" % (fwFile,flashpath))
+        print(command)
+        os.system(command)
+    else:
+        print("could not find RPI_RP2 on %s" %(flashpath))
+        exit(2)
